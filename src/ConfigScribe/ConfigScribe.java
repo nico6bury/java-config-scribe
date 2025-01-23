@@ -43,7 +43,12 @@ public class ConfigScribe {
             // get all the lines from the config file to work with later
             List<String> configLines = Files.readAllLines(configFilepath.toPath());
             // if we're creating a new config file, add the header
-            if (addHeaderToConfig) {/* TODO: Add header functionallity */}
+            if (addHeaderToConfig && store.getConfigHeader() != null) {
+                for (String headerLine : store.getConfigHeader()) {
+                    configLines.add("# " + headerLine);
+                }//end adding each header line to config file lines
+                configLines.add("");
+            }//end if we should and can add a header to the top of the config file
             // get list of fields to use for looking stuff up in match map
             Field[] fields = store.getClass().getFields();
             // find the lines at which things are written in existing config, if found at all
