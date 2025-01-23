@@ -7,7 +7,8 @@ import java.util.List;
  */
 public interface ConfigStore {
     /**
-     * @return Returns the name of the config file that holds this information. This should include the extension, but not the path.
+     * @return Returns the name of the config file that holds this information. This should include the extension, but not the path.<p>
+     * If this returns null, it will cause issues.
      */
     public String getConfigFilename();
 
