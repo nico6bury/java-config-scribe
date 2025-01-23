@@ -3,7 +3,6 @@ package ConfigScribe;
 import java.io.File;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,38 +17,24 @@ import SimpleResult.SimpleResult;
  * TODO: 
  * 
  */
-public class ConfigScribe<T extends ConfigStore> {
-    /**
-     * A little helper field to get around type erasure and figure out the class
-     * of T at runtime.
-     */
-    private final Class<T> typeT;
+public class ConfigScribe {
 
     /** Constructs the class */
-    @SuppressWarnings("unchecked")
-    public ConfigScribe() {
-        /*
-         * The nice way of saving the type of T was found at:
-         * https://nautsch.net/2008/10/28/class-von-type-parameter-java-generics/
-         */
-        this.typeT = (Class<T>)
-                ((ParameterizedType)getClass()
-                .getGenericSuperclass())
-                .getActualTypeArguments()[0];
-    }//end constructor
+    public ConfigScribe() { }
 
     /**
-     * This method writes information to a specified config file.
+     * This method writes information to a specified config file.<p>
      * This method is written in such a way as to keep any lines in an existing config
      * file that don't contain serialized information, so comments on separate lines are allowed.
+     * @param <T> This is the type of the config class, which needs to implement ConfigStore.
      * @param store A config store to be written to the file.
      * @return Returns either a meaningless string, or an exception if something stopped execution from finishing.
      */
-    public SimpleResult<String> writeConfig(T store) {
+    public static <T extends ConfigStore> SimpleResult<String> writeConfig(T store) {
         String jarLocation;
         try {
             // figure out path to write file to
-            jarLocation = new File(this.getClass().getProtectionDomain()
+            jarLocation = new File(ConfigStore.class.getProtectionDomain()
                 .getCodeSource().getLocation().toURI()).getParentFile().toString();
             File configFilepath = new File(jarLocation + File.separator + store.getConfigFilename());
             // make sure file exists
@@ -60,7 +45,7 @@ public class ConfigScribe<T extends ConfigStore> {
             // if we're creating a new config file, add the header
             if (addHeaderToConfig) {/* TODO: Add header functionallity */}
             // get list of fields to use for looking stuff up in match map
-            Field[] fields = typeT.getClass().getFields();
+            Field[] fields = store.getClass().getFields();
             // find the lines at which things are written in existing config, if found at all
             HashMap<String,Integer> matchMap = matchConfigLines(configLines, fields);
             // update lines in config file with values from parameters
@@ -92,30 +77,34 @@ public class ConfigScribe<T extends ConfigStore> {
 
     /**
      * This method reads from a specified config file and creates a ConfigStore
-     * based on the data parsed.
+     * based on the data parsed.<p>
      * This method is written in such a way as to ignore lines that don't contain
      * serialized information.
-     * @param filename The filename of the config file you want to read from.
+     * @param <T> This is the type of the config class, which needs to implement ConfigStore.
+     * @param potentialStore An out parameter that holds the object which will be written to after reading the file.<p>
+     * If this is null, then the method will return early, returning a NullPointerException explaining the issue.
      * @return Either a ConfigStore, or an exception that prevented the method from finishing.
      */
-    public SimpleResult<T> readConfig(String filename) {
+    public static <T extends ConfigStore> SimpleResult<String> readConfig(T potentialStore) {
+        // exit early if potentialStore is null
+        if (potentialStore == null)
+        { return new SimpleResult<String>(new NullPointerException("The generic parameter potentialStore cannot be null for this work.")); }
+        
         String jarLocation;
         try {
             // figure out path to write file to
-            jarLocation = new File(this.getClass().getProtectionDomain()
+            jarLocation = new File(ConfigScribe.class.getProtectionDomain()
                 .getCodeSource().getLocation().toURI()).getParentFile().toString();
-            File configFilepath = new File(jarLocation + File.separator + filename);
+            File configFilepath = new File(jarLocation + File.separator + potentialStore.getConfigFilename());
             // get all the lines from the config file
             List<String> configLines;
             if (!configFilepath.exists()) { configLines = new ArrayList<String>(); }
             else { configLines = Files.readAllLines(configFilepath.toPath()); }
             // get list of fields to use for looking stuff up in match map
-            Field[] fields = typeT.getClass().getFields();
+            Field[] fields = potentialStore.getClass().getFields();
             // find the lines at which things are written in existing config, if found at all
             HashMap<String,Integer> matchMap = matchConfigLines(configLines, fields);
-            //create store objects to read information into
-            T store = typeT.getDeclaredConstructor().newInstance();
-            // read data from config file into store
+            // read data from config file into potentialStore
             for (int i = 0; i < fields.length; i++) {
                 // check whether or not current field is recorded in file
                 if (matchMap.containsKey(fields[i].getName())) {
@@ -127,25 +116,25 @@ public class ConfigScribe<T extends ConfigStore> {
                         // try and parse depending on type of field
                         if (fields[i].getType() == int.class) {
                             int val = Integer.parseInt(splitLine[1]);
-                            fields[i].setInt(store, val);
+                            fields[i].setInt(potentialStore, val);
                         }//end if it's an integer
                         if (fields[i].getType() == double.class) {
                             double val = Double.parseDouble(splitLine[1]);
-                            fields[i].setDouble(store, val);
+                            fields[i].setDouble(potentialStore, val);
                         }//end if it's a double
                         if (fields[i].getType() == boolean.class) {
                             boolean val = Boolean.parseBoolean(splitLine[1]);
-                            fields[i].setBoolean(store, val);
+                            fields[i].setBoolean(potentialStore, val);
                         }//end if it's a boolean
                         if (fields[i].getType() == String.class) {
                             String val = splitLine[1];
-                            fields[i].set(store, val);
+                            fields[i].set(potentialStore, val);
                         }//end if it's a string
                     }//end if split line has expected length
                     else {
                         if (fields[i].getType() == String.class) {
                             String val = "";
-                            fields[i].set(store, val);
+                            fields[i].set(potentialStore, val);
                         }//end if value was an empty string
                         else {
                             System.err.println("Something went wrong with the config at line \"" + thisLine + "\", and I don't know how to parse it as " + fields[i].getName() + ".");
@@ -154,8 +143,8 @@ public class ConfigScribe<T extends ConfigStore> {
                 }//end if we found a line for this value
             }//end looping over fields, matching, and reading
             // return result wrapped around the config store we read
-            return new SimpleResult<>(store);
-        } catch (Exception e) { return new SimpleResult<T>(e); }
+            return new SimpleResult<String>("Things seem to have been a success.");
+        } catch (Exception e) { return new SimpleResult<String>(e); }
     }//end readConfig()
 
     /**
@@ -164,14 +153,14 @@ public class ConfigScribe<T extends ConfigStore> {
      * @param fields A list of the fields we're looking to find in the config file.
      * @return Returns a hashmap, with keys being strings denoting the names of properties of ConfigStore, and values being the index they're found at
      */
-    protected HashMap<String,Integer> matchConfigLines(List<String> lines, Field[] fields) {
+    protected static HashMap<String,Integer> matchConfigLines(List<String> lines, Field[] fields) {
         HashMap<String,Integer> matchMap = new HashMap<>();
 
         // get list of the names of properties of config store
         for (int i = 0; i < fields.length; i++) {
             String thisFieldName = fields[i].getName();
             for (int j = 0; j < lines.size(); j++) {
-                String thisLine = lines.get(i);
+                String thisLine = lines.get(j);
                 String thisTrimmedLine = thisLine.substring(0, Math.min(thisLine.length(), thisFieldName.length()));
                 if (thisTrimmedLine.equalsIgnoreCase(thisFieldName)) {
                     matchMap.put(thisFieldName, j);
