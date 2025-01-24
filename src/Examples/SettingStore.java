@@ -1,5 +1,6 @@
 package Examples;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,13 @@ public class SettingStore implements ConfigStore {
         header.add("For each value declaration, make sure to keep a space on either side of the equals sign.");
         return header;
     }//end getConfigHeader()
+    /**
+     * 
+     */
+    @Override
+    public File getDirectoryLocation() {
+        return new File(System.getProperty("user.home"), "Documents");
+    }
     
     public double unsharpSigma = 1.5;
     public String unsharpSigmaCOMMENT = "The sigma value to use when performing an unsharp mask.";

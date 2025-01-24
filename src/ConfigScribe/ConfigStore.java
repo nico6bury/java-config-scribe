@@ -1,5 +1,6 @@
 package ConfigScribe;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -18,4 +19,14 @@ public interface ConfigStore {
      * If you do not wish to include a header, simply return null.
      */
     public List<String> getConfigHeader();
+
+    /**
+     * Set this file to the directory you want the config file to be
+     * written and read from. <p>
+     * This also needs to be a directory, as tested by
+     * File.isDirectory(). If it doesn't exist, it will be created.<p>
+     * Alternatively, if you wish to just save the file in the default location,
+     * you can just leave this as null.
+     */
+    public File getDirectoryLocation();
 }//end interface ConfigStoreH

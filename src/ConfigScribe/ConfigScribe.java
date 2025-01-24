@@ -18,7 +18,6 @@ import SimpleResult.SimpleResult;
  * 
  */
 public class ConfigScribe {
-
     /** Constructs the class */
     public ConfigScribe() { }
 
@@ -31,12 +30,21 @@ public class ConfigScribe {
      * @return Returns either a meaningless string, or an exception if something stopped execution from finishing.
      */
     public static <T extends ConfigStore> SimpleResult<String> writeConfig(T store) {
-        String jarLocation;
+        // exit early if potentialStore is null
+        if (store == null)
+        { return new SimpleResult<String>(new NullPointerException("The generic parameter store cannot be null for this work.")); }
+        
+        File jarLocation;
         try {
-            // figure out path to write file to
-            jarLocation = new File(ConfigStore.class.getProtectionDomain()
-                .getCodeSource().getLocation().toURI()).getParentFile().toString();
-            File configFilepath = new File(jarLocation + File.separator + store.getConfigFilename());
+            if (store.getDirectoryLocation() != null && store.getDirectoryLocation().isDirectory()) {
+                jarLocation = store.getDirectoryLocation();
+                if (!jarLocation.exists()) { jarLocation.mkdirs(); }
+            } else {
+                // figure out path to write file to
+                jarLocation = new File(ConfigStore.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).getParentFile();
+            }//end else just stick the config file next to the jar
+            File configFilepath = new File(jarLocation,store.getConfigFilename());
             // make sure file exists
             boolean addHeaderToConfig = false;
             if (!configFilepath.exists()) {configFilepath.createNewFile(); addHeaderToConfig = true;}
@@ -103,12 +111,18 @@ public class ConfigScribe {
         if (potentialStore == null)
         { return new SimpleResult<String>(new NullPointerException("The generic parameter potentialStore cannot be null for this work.")); }
         
-        String jarLocation;
+        File jarLocation;
         try {
             // figure out path to write file to
-            jarLocation = new File(ConfigScribe.class.getProtectionDomain()
-                .getCodeSource().getLocation().toURI()).getParentFile().toString();
-            File configFilepath = new File(jarLocation + File.separator + potentialStore.getConfigFilename());
+            if (potentialStore.getDirectoryLocation() != null && potentialStore.getDirectoryLocation().isDirectory()) {
+                jarLocation = potentialStore.getDirectoryLocation();
+                if (!jarLocation.exists()) { jarLocation.mkdirs(); }
+            } else {
+                // figure out path to write file to
+                jarLocation = new File(ConfigStore.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).getParentFile();
+            }//end else just stick the config file next to the jar
+            File configFilepath = new File(jarLocation, potentialStore.getConfigFilename());
             // get all the lines from the config file
             List<String> configLines;
             if (!configFilepath.exists()) { configLines = new ArrayList<String>(); }

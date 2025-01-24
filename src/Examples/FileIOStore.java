@@ -1,5 +1,6 @@
 package Examples;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,13 @@ public class FileIOStore implements ConfigStore {
         header.add("Please do not manually edit anything in this file.");
         return header;
     }//end getConfigHeader()
+    /**
+     * 
+     */
+    @Override
+    public File getDirectoryLocation() {
+        return null;
+    }//end directoryLocation()
     
     public String lastOutputPath = "";
     public int timesOpened = 0;
