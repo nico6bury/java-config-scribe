@@ -56,7 +56,7 @@ public class ConfigScribe {
             // update lines in config file with values from parameters
             for (int i = 0; i < fields.length; i++) {
                 // skip comment and name fields in main loop
-                if (fields[i].getName().endsWith("Comment") || fields[i].getName().endsWith("Name")) {continue;}
+                if (fields[i].getName().endsWith("COMMENT") || fields[i].getName().endsWith("NAME")) {continue;}
                 // get name of field, accounting for name changes
                 String fName = checkFieldName(fields[i], fields, store);
                 // get the formatting figured out beforehand since it will be the same
@@ -120,7 +120,7 @@ public class ConfigScribe {
             // read data from config file into potentialStore
             for (int i = 0; i < fields.length; i++) {
                 // skip comment and name fields in main loop
-                if (fields[i].getName().endsWith("Comment") || fields[i].getName().endsWith("Name")) {continue;}
+                if (fields[i].getName().endsWith("COMMENT") || fields[i].getName().endsWith("NAME")) {continue;}
                 // get configured name of field
                 String fName = checkFieldName(fields[i], fields, potentialStore);
                 // check whether or not current field is recorded in file
@@ -178,10 +178,10 @@ public class ConfigScribe {
         // get list of the names of properties of config store
         for (int i = 0; i < fields.length; i++) {
             // if this field simply serves to specify the name of another field, skip it
-            if (fields[i].getName().endsWith("Name")) {continue;}
+            if (fields[i].getName().endsWith("NAME")) {continue;}
             // make sure we're looking for the right name for this field
             String thisFieldName = checkFieldName(fields[i], fields, exampleObj);
-            boolean isCommentField = fields[i].getName().endsWith("Comment");
+            boolean isCommentField = fields[i].getName().endsWith("COMMENT");
             for (int j = 0; j < lines.size(); j++) {
                 String thisLine = lines.get(j);
                 // change how we find the index/indices depending on whether we're looking for a value or a comment
@@ -220,7 +220,7 @@ public class ConfigScribe {
     /**
      * Helper function intended for matchConfigLines.<p>
      * Checks a given field against an array of fields.
-     * If one of the fields' names is the given field's name plus "Name",
+     * If one of the fields' names is the given field's name plus "NAME",
      * then the value of that field in exampleObj is returned instead. <p>
      * If an IllegalArgumentException or IllegalAccessException occurs when
      * attempting to get the name from the value of that field in exampleObj,
@@ -236,7 +236,7 @@ public class ConfigScribe {
         String defaultName = field.getName();
         for (Field thisField : fields) {
             String thisFieldName = thisField.getName();
-            if (thisFieldName.equals(defaultName + "Name")) {
+            if (thisFieldName.equals(defaultName + "NAME")) {
                 try {
                     return thisField.get(exampleObj).toString();
                 } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -251,7 +251,7 @@ public class ConfigScribe {
     /**
      * Helper function intended for matchConfigLines.<p>
      * Checks a given field against an array of fields.
-     * If one of the fields' names is the given field's name plus "Comment",
+     * If one of the fields' names is the given field's name plus "COMMENT",
      * then the value of that field in exampleObj is returned instead. <p>
      * If an IllegalArgumentException or IllegalAccessException occurs when
      * attempting to get the name from the value of that field in exampleObj,
@@ -267,7 +267,7 @@ public class ConfigScribe {
         String defaultFieldName = field.getName();
         for (Field thisField : fields) {
             String thisFieldName = thisField.getName();
-            if (thisFieldName.equals(defaultFieldName + "Comment")) {
+            if (thisFieldName.equals(defaultFieldName + "COMMENT")) {
                 try {
                     return thisField.get(exampleObj).toString();
                 } catch (IllegalArgumentException | IllegalAccessException e) {

@@ -30,11 +30,11 @@ public class SettingStore implements ConfigStore {
     }//end getConfigHeader()
     
     public double unsharpSigma = 1.5;
-    public String unsharpSigmaComment = "The sigma value to use when performing an unsharp mask.";
+    public String unsharpSigmaCOMMENT = "The sigma value to use when performing an unsharp mask.";
     public boolean unsharpSkip = true;
-    public String unsharpSkipComment = "If this is true, then the unsharp mask operation will be not be performed.";
+    public String unsharpSkipCOMMENT = "If this is true, then the unsharp mask operation will be not be performed.";
     public int dpi = 600;
-    public String suffixComment = "This suffix is added to each created image file.";
+    public String suffixCOMMENT = "This suffix is added to each created image file.";
     public String suffix = "-test";
-    public String suffixName = "image_file_suffix";
+    public String suffixNAME = "image_file_suffix";
 }//end class SettingStore
