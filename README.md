@@ -6,16 +6,99 @@ Here's a disordered list of details about how to use the thing
 
 - For each configuration file, just create a class which:
   - contains public fields of supported types
-    - as of writing, fields of types String, int, double, and boolean are supported
-  - implements the ConfigStore interface
+    - as of writing, fields of types `String`, `int`, `double`, and `boolean` are supported
+  - implements the `ConfigStore` interface
 - This project uses reflection to look at each config class. Thus:
   - Any field whose name ends with "COMMENT" is treated as the default comment for another field
     - So, if you had a field named suffix, you could add a custom comment for it in a field called suffixCOMMENT.
   - Any field whose name ends with "NAME" is treated as the name of another field within the config file
     - So, if you had a field named suffix and a field named suffixNAME, then the value of suffixNAME would be the actual name used for suffix in the config file.
+  - It is optimal to call read or write functions a limited number of times per second instead of every time one individual setting is changed.
 - Each line that starts with # is treated as a comment in the config file.
-- As of writing, the current version of ConfigStore will ignore anything in the config file it doesn't recognize, so the comment syntax is more for the user to determine what is or is not a comment.
-- Under certain circumstances, it's possible that ConfigScribe will print Exception information to System.err. It shouldn't actually throw any exceptions to the outside, however.
+- As of writing, the current version of `ConfigStore` will ignore anything in the config file it doesn't recognize, so the comment syntax is more for the user to determine what is or is not a comment.
+- Under certain circumstances, it's possible that `ConfigScribe` will print Exception information to System.err. It shouldn't actually throw any exceptions to the outside, however.
 - For each config file, you can choose both a name for the file and the directory where that file will be located.
-- When you configure a custom header or comments for your config file, that information will only be written if ConfigScribe can't find an older config file and makes a new one.
-- when implementing ConfigStore, you can get safely set getConfigHeader and getDirectoryLocation to always return null; the config scribe will simple use the defaults of not including a header and placing the config file in the same directory as the jar file. However, you must always set the name for getConfigFilename.
+- When you configure a custom header or comments for your config file, that information will only be written if `ConfigScribe` can't find an older config file and makes a new one. Thus, you might have to delete the existing config file for new default comments/headers to show up.
+- when implementing `ConfigStore`, you can get safely set `getConfigHeader()` and `getDirectoryLocation()` to always return null; the config scribe will simple use the defaults of not including a header and placing the config file in the same directory as the jar file. However, you must always set the name for `getConfigFilename()`.
+
+Also, if you want a very simple way of reading and writing from the config file, include these functions in your class which implements ConfigStore:
+
+```java
+
+public SimpleResult<String> readConfig() {
+  return ConfigScribe.readConfig(this);
+}//end readConfig()
+
+public SimpleResult<String> writeConfig() {
+  return ConfigScribe.writeConfig(this);
+}//end writeConfig()
+
+```
+
+And then, when you want to use those functions elsewhere to read and write from the config file, first make sure you've initialized the class which implements ConfigStore, like so:
+
+```java
+
+ConfigStoreClass conf = new ConfigStoreClass();
+
+```
+
+Any time you want to update the `conf` object with whatever is in the actual file, just run
+
+```java
+
+conf.readConfig()
+
+```
+
+and the fields will be updated.
+
+Similarly, anytime you want to write the current state of `conf` to the actual file, just run
+
+```java
+
+conf.writeConfig()
+
+```
+
+You can save the `SimpleResult<String>` that you get back from `readConfig()` and `writeConfig()`, but you can also just ignore it (like we do in the examples) if you don't expect the methods to fail.
+
+As additional examples, here are some placeholder values you could set `getConfigHeader()`, `getDirectoryLocation()`, and `getConfigFilename()` with the following snippets, just replacing stuff like "**PROJECT_NAME**" and "**generic_config**" with your own names.
+
+```java
+
+@Override
+public String getConfigFilename() {return "generic_config.conf";}
+
+@Override
+public List<String> getConfigHeader() {
+  List<String> lines = new ArrayList<String>();
+  lines.add("TODO: PLACEHOLDER HEADER");
+  lines.add("In this file, lines not parsed as variable serialization are automatically ignored.");
+  lines.add("Because of this, any line starting with \'#\' will automatically be interpretted as");
+  lines.add("a comment. Any comments will be untouched in the config file, so feel free to add");
+  lines.add("your own comments.");
+  lines.add("");
+  lines.add("If this config file is ever deleted, then it should be re-generated whenever the program");
+  lines.add("next tries to save here. All parameters will be set to default, and all default comments");
+  lines.add("will be added to the new config file, including this header comment.");
+  lines.add("");
+  return lines;
+}
+
+/**
+ * Try to get directory location at AppData/Local/PROJECT_NAME. If that directory doesn't
+ * exist AND we can't make it, then fallback to null, which should be interpreted as whatever
+ * directory the jar is being run from.
+ */
+@Override
+public File getDirectoryLocation() {
+  File dirLoc = new File(System.getProperty("user.home"), "AppData\\Local\\PROJECT_NAME");
+  if (!dirLoc.exists()) {
+    if (dirLoc.mkdir()) {
+      return dirLoc;
+    } else {return null;}
+  } else {return dirLoc;}
+}//end getDirectoryLocation()
+
+```
