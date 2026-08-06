@@ -18,6 +18,20 @@ import SimpleResult.SimpleResult;
  * 
  */
 public class ConfigScribe {
+    
+    /**
+     * If this is set to true, then when writing to the config file, any lines which
+     * seem to be comments but aren't empty and don't start with '#'' will have "# "
+     * appended to the start of the line.
+     * <p>
+     * The current implementation checks every line in the file against every field
+     * of the ConfigStore, which is part of why it's toggle-able and off-by-default.  
+     * <p>
+     * It should be noted that lines containing a duplicate field name will sometimes be
+     * commented out in this way regardless, as the searching for that is built-in.
+     */
+    public static boolean shouldFixComments = false;
+    
     /** Constructs the class */
     public ConfigScribe() { }
 
@@ -74,6 +88,13 @@ public class ConfigScribe {
                     // rewrite the line at index in matchMap[fields[i].getName()]
                     int index = matchMap.get(fName)[0];
                     configLines.set(index, fLine);
+                    // if something for field is written in multiple places, comment out the other lines
+                    if (matchMap.get(fName).length > 1) {
+                        int[] indices = matchMap.get(fName);
+                        for (int j = 1; j < indices.length; j++) {
+                            configLines.set(j, "# " + configLines.get(j));
+                        }//end looping over each index of a duplicate field
+                    }//end if there's more than one line with this field name
                 }//end if we can rewrite the corresponding line
                 else {
                     // Add customized comments for each potential field with one configured
@@ -87,6 +108,29 @@ public class ConfigScribe {
                     configLines.add("");
                 }//end else we'll have to add a new line for this field
             }//end looping over fields, matching, and writing
+
+            // only add "# " to some lines to make it clearer that they're considered comments
+            if (ConfigScribe.shouldFixComments) {
+                // figure out which indices are fields
+                List<Integer> fieldIndices = new ArrayList<Integer>();
+                for (int[] indices : matchMap.values()) {
+                    if (indices.length > 0) {
+                        fieldIndices.add(indices[0]);
+                    }//end if we have an index to add
+                }//end getting all the field indices
+
+                // look for the broken comments
+                for (int i = 0; i < configLines.size(); i++) {
+                    String thisLine = configLines.get(i);
+                    if (thisLine.isBlank()) {continue;}
+                    if (thisLine.startsWith("#")) {continue;}
+                    if (fieldIndices.contains(i)) {continue;}
+                    // if not blank, doesn't start with #, not a field line, 
+                    // must have text meant as comment but isn't commented yet
+                    configLines.set(i, "# " + thisLine);
+                }//end looping over each line, looking for broken comments
+            }//end fixing broken comments
+
             // clear files of text
             new FileWriter(configFilepath, false).close();
             // write changes to files
